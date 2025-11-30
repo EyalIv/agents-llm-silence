@@ -4,12 +4,29 @@ from google.adk.models.google_llm import Gemini
 from google.adk.tools import google_search
 from google.genai import types
 
-retry_config = types.HttpRetryOptions(attempts=5, exp_base=7, initial_delay=1, http_status_codes=[429, 500, 503, 504])
+# Retry configuration
+# Standard exponential backoff to handle transient rate limits gracefully
+retry_config = types.HttpRetryOptions(
+    attempts=5, 
+    exp_base=2, 
+    initial_delay=2, 
+    http_status_codes=[429, 500, 503, 504]
+)
+
+# Shared Model Configuration
+# UPDATED: Using the specific Gemini 2.0 Flash Lite Preview model.
+# This model is optimized for cost and latency, making it ideal for multi-agent chains.
+shared_model = Gemini(
+    model="gemini-2.5-flash",  
+    temperature=0.7,
+    max_output_tokens=512,
+    retry_options=retry_config
+)
 
 # 1. The Strategist
 strategist_agent = Agent(
     name="TheStrategist",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     output_key="raw_concepts",
     instruction="""
     You are an expert consultant. Identify exactly 3 fundamental First Principles for the user's request.
@@ -21,7 +38,7 @@ strategist_agent = Agent(
 # 2. The Librarian
 librarian_agent = Agent(
     name="TheLibrarian",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     tools=[google_search],
     output_key="verified_links",
     instruction="""
@@ -39,7 +56,7 @@ librarian_agent = Agent(
 # 3. The Editor
 editor_agent = Agent(
     name="TheEditor",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     output_key="triad_text",
     instruction="Format the input into a clean Markdown numbered list with bold titles."
 )
@@ -47,7 +64,7 @@ editor_agent = Agent(
 # 4. The Projectionist (YouTube)
 projectionist_agent = Agent(
     name="TheProjectionist",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     tools=[google_search],
     output_key="video_link",
     instruction="""
@@ -60,7 +77,7 @@ projectionist_agent = Agent(
 # 5. The Sage
 sage_agent = Agent(
     name="TheSage",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     instruction="""
     You are a wise sage who speaks few words.
     Inputs: triad_text and video_link.
@@ -75,7 +92,7 @@ sage_agent = Agent(
 # 6. Monk Dōgen (Zen Master)
 dogen_agent = Agent(
     name="MonkDogen",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     instruction="""
     You are Eihei Dōgen, the 13th-century Zen Master.
     Your goal is to take a topic provided by the user and ask ONE profound, piercing question about the *experience* or *practice* of that topic.
@@ -92,7 +109,7 @@ dogen_agent = Agent(
 # 7. Ludwig Wittgenstein (Philosopher)
 wittgenstein_agent = Agent(
     name="LudwigWittgenstein",
-    model=Gemini(model="gemini-2.0-flash-exp", retry_options=retry_config),
+    model=shared_model,
     instruction="""
     You are Ludwig Wittgenstein (Philosophical Investigations era).
     Your goal is to take a topic provided by the user and ask ONE probing question about the *language game* or *grammar* of that topic.
@@ -105,10 +122,3 @@ wittgenstein_agent = Agent(
     5. Output: Output ONLY the question. Do not explain yourself.
     """
 )
-
-# Main agent (must be named root_agent)
-# We use a custom flow to handle the silence and parallel agents
-# root_agent = SequentialAgent(
-#     name="BuddhistOracle",
-#     sub_agents=[strategist_agent, librarian_agent, editor_agent, projectionist_agent, sage_agent, dogen_agent, wittgenstein_agent]
-# )

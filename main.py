@@ -1,7 +1,9 @@
 import asyncio
 import time
 import os
+import random
 from dotenv import load_dotenv
+from google.api_core.exceptions import ResourceExhausted
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 from agent import dogen_agent, wittgenstein_agent, strategist_agent, librarian_agent, editor_agent, projectionist_agent, sage_agent
@@ -19,12 +21,46 @@ async def run_agent(agent, user_query, session_id):
     message = types.Content(parts=[types.Part(text=user_query)])
     
     output_text = ""
-    async for event in runner.run_async(user_id="user", session_id=session_id, new_message=message):
-        # Attempt to extract text from the event. 
-        if hasattr(event, 'text') and event.text:
-             output_text = event.text
-        elif hasattr(event, 'response') and hasattr(event.response, 'text') and event.response.text:
-             output_text = event.response.text
+    max_retries = 5
+
+    for attempt in range(max_retries):
+        try:
+            chunks = []
+            async for event in runner.run_async(user_id="user", session_id=session_id, new_message=message):
+                # ADK events expose streaming deltas as well as the final response payload.
+                chunk = None
+
+                if hasattr(event, "text") and event.text:
+                    chunk = event.text
+                elif hasattr(event, "delta") and getattr(event.delta, "text", None):
+                    chunk = event.delta.text
+                elif hasattr(event, "is_final_response") and event.is_final_response():
+                    content = getattr(event, "content", None)
+                    if content and getattr(content, "parts", None):
+                        text_parts = [part.text for part in content.parts if getattr(part, "text", None)]
+                        if text_parts:
+                            chunk = "".join(text_parts)
+
+                if chunk:
+                    chunks.append(chunk)
+            
+            if chunks:
+                output_text = "".join(chunks)
+            
+            # If successful, break the retry loop
+            break
+
+        except ResourceExhausted:
+            if attempt == max_retries - 1:
+                raise  # Re-raise the exception if we've run out of retries
+            
+            # Base wait time: 2, 4, 8, 16, 32 seconds
+            wait_time = (2 ** attempt) 
+            # Add random jitter (0-1 sec) to prevent synchronized retries
+            actual_wait = wait_time + random.random()
+            
+            print(f"Rate limit hit for {session_id}. Retrying in {actual_wait:.2f} seconds...")
+            await asyncio.sleep(actual_wait)
 
     return output_text
 
