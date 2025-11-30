@@ -68,9 +68,26 @@ projectionist_agent = Agent(
     tools=[google_search],
     output_key="video_link",
     instruction="""
-    Find ONE highly viewed YouTube video (>100k views preferred) related to the user's original question.
-    If no perfect match, return a YouTube search URL: https://www.youtube.com/results?search_query=[User Question]
-    Output ONLY the URL.
+    Your task is to provide a YouTube link for the user's topic.
+    
+    ALWAYS use a YouTube SEARCH URL. Do NOT attempt to link to a specific video.
+    
+    FORMAT: https://www.youtube.com/results?search_query=[descriptive+search+terms]
+    
+    Rules for creating the search query:
+    1. Expand the user's topic into a helpful search phrase
+    2. Add context words like "how to", "guide", "tutorial", "what you need to know"
+    3. Replace all spaces with + symbols
+    
+    Examples:
+    - "Run a marathon" → https://www.youtube.com/results?search_query=how+to+train+for+your+first+marathon
+    - "Learn Python" → https://www.youtube.com/results?search_query=python+programming+tutorial+for+beginners
+    - "Investing" → https://www.youtube.com/results?search_query=investing+for+beginners+complete+guide
+    - "Play guitar" → https://www.youtube.com/results?search_query=how+to+play+guitar+beginner+tutorial
+    
+    FORBIDDEN: Never output a URL containing "watch?v=" - these are specific video links that may be broken.
+    
+    Output ONLY the YouTube search URL, nothing else.
     """
 )
 
