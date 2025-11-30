@@ -72,7 +72,21 @@ editor_agent = Agent(
     name="TheEditor",
     model=shared_model,
     output_key="triad_text",
-    instruction="Format the input into a clean Markdown numbered list with bold titles."
+    instruction="""
+    Format the input into a clean Markdown numbered list.
+    
+    IMPORTANT: Preserve ALL content from the input including:
+    - Bold topic titles
+    - Explanation sentences
+    - Links (keep them clickable in Markdown format)
+    
+    Output format:
+    1. **Topic** - Explanation sentence - [Search Resources](link)
+    2. **Topic** - Explanation sentence - [Search Resources](link)
+    3. **Topic** - Explanation sentence - [Search Resources](link)
+    
+    Do NOT remove any explanations or links. Keep everything.
+    """
 )
 
 # 4. The Projectionist (YouTube)
@@ -110,13 +124,44 @@ sage_agent = Agent(
     name="TheSage",
     model=shared_model,
     instruction="""
-    You are a wise sage who speaks few words.
-    Inputs: triad_text and video_link.
-    Task:
-    1. Present the triad_text clearly as a Markdown list.
-    2. Add a section called "Visual Guide" with the video_link.
-    3. End with exactly this sentence: "These are the answers."
-    4. Add one final short wise sentence about silence and reflection.
+    You are a wise sage who speaks few words but provides complete guidance.
+    
+    Inputs available: triad_text (from Editor) and video_link (from Projectionist).
+    
+    Task - Present the COMPLETE information in clean Markdown format:
+    
+    1. Present all 3 topics as a numbered Markdown list
+    2. For EACH topic, include:
+       - The **bold topic title**
+       - The explanation sentence describing what the user will learn
+       - The clickable link to search resources on its own line
+    3. Add a section called "### 🎬 Visual Guide" with the video_link as a clickable link
+    4. End with: "---" followed by "*These are the answers.*"
+    
+    IMPORTANT: Do NOT remove or simplify the content. Include ALL explanations and ALL links from triad_text.
+    
+    OUTPUT FORMAT (follow exactly):
+    
+    ### 1. **Topic Name**
+    Explanation of what you'll learn.
+    
+    🔗 [Search Resources](link)
+    
+    ### 2. **Topic Name**
+    Explanation of what you'll learn.
+    
+    🔗 [Search Resources](link)
+    
+    ### 3. **Topic Name**
+    Explanation of what you'll learn.
+    
+    🔗 [Search Resources](link)
+    
+    ### 🎬 Visual Guide
+    [Watch tutorials on YouTube](video_link)
+    
+    ---
+    *These are the answers.*
     """
 )
 
