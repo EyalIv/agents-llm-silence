@@ -25,27 +25,14 @@ async def run_agent(agent, user_query, session_id):
 
     for attempt in range(max_retries):
         try:
-            chunks = []
             async for event in runner.run_async(user_id="user", session_id=session_id, new_message=message):
-                # ADK events expose streaming deltas as well as the final response payload.
-                chunk = None
-
-                if hasattr(event, "text") and event.text:
-                    chunk = event.text
-                elif hasattr(event, "delta") and getattr(event.delta, "text", None):
-                    chunk = event.delta.text
-                elif hasattr(event, "is_final_response") and event.is_final_response():
+                # Only capture the FINAL response, not intermediate agent outputs
+                if hasattr(event, "is_final_response") and event.is_final_response():
                     content = getattr(event, "content", None)
                     if content and getattr(content, "parts", None):
                         text_parts = [part.text for part in content.parts if getattr(part, "text", None)]
                         if text_parts:
-                            chunk = "".join(text_parts)
-
-                if chunk:
-                    chunks.append(chunk)
-            
-            if chunks:
-                output_text = "".join(chunks)
+                            output_text = "".join(text_parts)
             
             # If successful, break the retry loop
             break
