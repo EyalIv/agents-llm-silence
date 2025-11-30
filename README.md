@@ -1,10 +1,8 @@
-# Buddhist Oracle 🧘
+# Core3
 
-**Wisdom through Silence — Distill any topic to its essence**
+**Understand any topic through its 3 most important principles**
 
-> *"These are the answers."* (Then silence)
-
-Buddhist Oracle is a multi-agent AI system that transforms complex topics into exactly 3 first principles, provides curated resources, then invites you into contemplative silence. It's the anti-LLM: concise, complete, and conversation-ending.
+A multi-agent AI system that distills complex topics into exactly 3 first principles with curated resources. The application allows you to study a topic, then uses silence to let ideas assimilate. At the end, Dōgen and Wittgenstein prompt a moment of introspection on the topic.
 
 ---
 
