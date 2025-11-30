@@ -1,3 +1,4 @@
 .env
 __pycache__/
 *.pyc
+aids_and_helpful_information/
